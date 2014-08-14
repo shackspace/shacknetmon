@@ -1,25 +1,60 @@
 #include <Adafruit_NeoPixel.h>
+#include <SimpleTimer.h>
+
+SimpleTimer timer; 
 #define STRIPLENGTH 114
 #define PIN 15
 
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(STRIPLENGTH, PIN, NEO_GRB + NEO_KHZ800);
 
-
 void setup() {
   Serial.begin(9600);
   strip.begin();
   blackout();
+  Serial.println("Init");
   strip.show();
+  timer.setInterval(100, fadePercentage);
 }
-
+int target_perc = 0;
+int real_perc = 0;
 void loop() {
-  int perc = Serial.parseInt();
-  if (Serial.read() == '\n') {
-    setPercentage(perc);
+  if (Serial.available() > 0) {
+    int perc = Serial.parseInt();
+    if (Serial.read() == '\n') {
+      setNewPercentage(perc);
+    }
   }
-  
+  timer.run();
 }
 
+void setNewPercentage(uint8_t percentage) {
+  target_perc = percentage;    
+}
+void fadePercentage() {
+  if (target_perc > real_perc) {
+    Serial.print("Target: ");
+    Serial.print(target_perc);
+    Serial.print(" Old: ");
+    Serial.print(real_perc);
+    real_perc++;
+    setPercentage(real_perc);
+    Serial.print(" New: ");
+    Serial.println(real_perc);
+  }else if (target_perc < real_perc) {
+          Serial.print("Target: ");
+    Serial.print(target_perc);
+    Serial.print(" Old: ");
+    Serial.print(real_perc);
+
+    real_perc--;
+    setPercentage(real_perc);
+    Serial.print(" New: ");
+    Serial.println(real_perc);
+  }else { 
+    return;
+  }
+
+}
 void setPercentage(uint8_t percentage) {
   blackout();
   float p = percentage / 100.0;
